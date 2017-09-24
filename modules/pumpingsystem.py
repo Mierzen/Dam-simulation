@@ -20,31 +20,25 @@ class PumpingLevel:
         self.UL_HL = UL_HL
         self.UL_100 = False
 
-    def get_level_history(self):
-        return self.level_history
-
-    def get_level_history_from_index(self, index):
-        return self.level_history[index]
+    def get_level_history(self, index=None):
+        return self.level_history if index is None else self.level_history[index]
 
     # @levelHistory.setter
-    def set_level_history(self, index, value):
+    def set_level_history_at_index(self, index, value):
         self.level_history[index] = value
 
-    def get_pumping_schedule(self):
-        return self.pumping_schedule
-
-    def getpumping_schedule_from_index(self, index):
-        return self.pumping_schedule[index]
+    def get_pumping_schedule(self, index=None):
+        return self.pumping_schedule if index is None else self.pumping_schedule[index]
 
     # @levelHistory.setter
-    def set_pumping_schedule(self, index, value):
+    def set_pumping_schedule_at_index(self, index, value):
         self.pumping_schedule[index] = value
 
+    def get_scada_pump_schedule_level(self, pump_index, tariff_index):
+        return self.pump_schedule[pump_index, tariff_index]
+
     def get_last_outflow(self):
-        if self.fed_to_level is None:
-            return 0
-        else:
-            return self.last_outflow
+        return 0 if self.fed_to_level is None else self.last_outflow
 
     def set_last_outflow(self, value):
         self.last_outflow = value
