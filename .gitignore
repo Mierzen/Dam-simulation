@@ -99,3 +99,13 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# Dropbox
+.dropbox
+.dropbox.attr
+
+# PyCharm
+.idea/
+
+# custom
+.csv
