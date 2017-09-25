@@ -178,16 +178,15 @@ class PumpSystem:
             self._save_simulation_results(mode, seconds)
 
     def _save_simulation_results(self, mode, seconds):
-        df = pd.DataFrame()
-
+        df_list = []
         index = range(0, seconds)
-
         for level in self.levels:
             data_level = level.get_level_history()
             data_schedule = level.get_pump_status_history()
             data = {level.name + " Level": data_level,
                     level.name + " Status": data_schedule}
-            df = pd.concat([df, pd.DataFrame(data=data, index=index)], axis=1)
+            df_list.append(pd.DataFrame(data=data, index=index))
+        df = pd.concat(df_list, axis=1)
 
         data = {'Pump system total power': self.total_power,
                 'Eskom ToU': self.eskom_tou}
