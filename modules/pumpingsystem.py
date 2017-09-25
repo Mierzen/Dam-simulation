@@ -4,7 +4,7 @@ import pandas as pd
 
 class PumpingLevel:
     def __init__(self, name, capacity, initial_level, pump_flow, pump_power, pump_schedule_table, initial_pumps_status, fissure_water_inflow,
-                 hysteresis=5.0, UL_LL=95.0, UL_HL=100.0, fed_to_level=None):
+                 hysteresis=5.0, UL_LL=95.0, UL_HL=100.0, fed_to_level=None, pump_statuses_for_verification=None):
         self.name = name
         self.capacity = capacity
         self.pump_flow = pump_flow
@@ -20,6 +20,7 @@ class PumpingLevel:
         self.UL_HL = UL_HL
         self.UL_100 = False
         self.max_pumps = len([1 for r in pump_schedule_table if [150, 150, 150] not in r])
+        self.pump_statuses_for_verification = pump_statuses_for_verification # this is only used in verification mode
 
     def get_level_history(self, index=None):
         return self.level_history if index is None else self.level_history[index]
@@ -116,42 +117,46 @@ class PumpSystem:
             self.eskom_tou.append(tou_time_slot)
 
             for level in self.levels:
-                upstream_dam_name = level.get_upstream_level_name()
-                if mode == '1-factor' or upstream_dam_name is None:
-                    upper_dam_level = 45
-                else:
-                    upper_dam_level = self.get_level_from_name(upstream_dam_name).get_level_history(t - 1)
+                if mode is not 'verification':
+                    upstream_dam_name = level.get_upstream_level_name()
+                    if mode == '1-factor' or upstream_dam_name is None:
+                        upper_dam_level = 45
+                    else:
+                        upper_dam_level = self.get_level_from_name(upstream_dam_name).get_level_history(t - 1)
 
-                if upper_dam_level >= level.UL_HL:
-                    level.set_UL_100(True)
-                if upper_dam_level <= level.UL_LL:
-                    level.set_UL_100(False)
+                    if upper_dam_level >= level.UL_HL:
+                        level.set_UL_100(True)
+                    if upper_dam_level <= level.UL_LL:
+                        level.set_UL_100(False)
 
-                if not level.UL_100:
-                    pumps_required = level.get_pump_status_history(t - 1)
+                    if not level.UL_100:
+                        pumps_required = level.get_pump_status_history(t - 1)
 
-                    do_next_check = False
+                        do_next_check = False
 
-                    for p in range(1, level.max_pumps + 1):
-                        dam_level = level.get_level_history(t - 1)
-                        pump_level = level.get_scada_pump_schedule_table_level(p - 1, tou_time_slot - 1)
+                        for p in range(1, level.max_pumps + 1):
+                            dam_level = level.get_level_history(t - 1)
+                            pump_level = level.get_scada_pump_schedule_table_level(p - 1, tou_time_slot - 1)
 
-                        if dam_level >= pump_level:
-                            pumps_required_temp = p
-                            do_next_check = True
+                            if dam_level >= pump_level:
+                                pumps_required_temp = p
+                                do_next_check = True
 
-                        if dam_level < (
-                            level.get_scada_pump_schedule_table_level(0, tou_time_slot - 1) - level.hysteresis):
-                            pumps_required = 0
-                            do_next_check = False
+                            if dam_level < (
+                                level.get_scada_pump_schedule_table_level(0, tou_time_slot - 1) - level.hysteresis):
+                                pumps_required = 0
+                                do_next_check = False
 
-                    if pumps_required >= (pumps_required_temp + 2):
-                        pumps_required = pumps_required_temp + 1
-                    if do_next_check:
-                        if pumps_required_temp > pumps_required:
-                            pumps_required = pumps_required_temp
-                else:
-                    pumps_required = 0
+                        if pumps_required >= (pumps_required_temp + 2):
+                            pumps_required = pumps_required_temp + 1
+                        if do_next_check:
+                            if pumps_required_temp > pumps_required:
+                                pumps_required = pumps_required_temp
+                    else:
+                        pumps_required = 0
+
+                else:  # verification mode, so use actual statuses
+                    pumps_required = level.pump_statuses_for_verification[t]
 
                 # calculate and update simulation values
                 pumps = pumps_required

@@ -44,19 +44,19 @@ initial_level_IPC = actual_values['IPC Level'][0]
 pump_system = ps.PumpSystem('K7')
 pump_system.add_level(ps.PumpingLevel("41L", 3000000, initial_level_41,
                                       216.8, 3508.4, pump_schedule_41, 1,
-                                      inflow_41, fed_to_level="31L"))
+                                      inflow_41, fed_to_level="31L", pump_statuses_for_verification=actual_status_41))
 pump_system.add_level(ps.PumpingLevel("31L", 3000000, initial_level_31,
                                       146.8, 3283.6, pump_schedule_31, 3,
-                                      inflow_31, fed_to_level="20L"))
+                                      inflow_31, fed_to_level="20L", pump_statuses_for_verification=actual_status_31))
 pump_system.add_level(ps.PumpingLevel("20L", 3000000, initial_level_20,
                                       171.8, 3821.0, pump_schedule_20, 3,
-                                      inflow_20, fed_to_level="IPC"))
+                                      inflow_20, fed_to_level="IPC", pump_statuses_for_verification=actual_status_20))
 pump_system.add_level(ps.PumpingLevel("IPC", 3000000, initial_level_IPC,
                                       147.4, 3572.8, pump_schedule_IPC, 3,
-                                      inflow_IPC))
+                                      inflow_IPC, pump_statuses_for_verification=actual_status_IPC))
 
 
 # Perform simulations
-# pump_system.perform_simulation(mode='verification')
+pump_system.perform_simulation(mode='verification', save=True)
 pump_system.perform_simulation(mode='1-factor', save=True)
-# pump_system.perform_simulation(mode='2-factor')
+pump_system.perform_simulation(mode='2-factor', save=True)
