@@ -2,40 +2,41 @@ import math
 
 
 class PumpingLevel:
-    def __init__(self, name, capacity, initial_level, pump_flow, pump_power, pump_schedule, fissure_water_inflow,
+    def __init__(self, name, capacity, initial_level, pump_flow, pump_power, pump_schedule_table, fissure_water_inflow,
                  hysteresis=5.0, UL_LL=95.0, UL_HL=100.0, fed_to_level=None):
         self.name = name
         self.capacity = capacity
         self.pump_flow = pump_flow
         self.pump_power = pump_power
-        self.pump_schedule = pump_schedule
+        self.pump_schedule_table = pump_schedule_table
         self.fissure_water_inflow = fissure_water_inflow
         self.level_history = []
         self.level_history.append(initial_level)
-        self.pumping_schedule = []
+        self.pump_status_history = []
         self.fed_to_level = fed_to_level  # to which level does this one pump?
         self.last_outflow = 0
         self.hysteresis = hysteresis
         self.UL_LL = UL_LL
         self.UL_HL = UL_HL
         self.UL_100 = False
+        self.max_pumps = len([1 for r in pump_schedule_table if [150, 150, 150] not in r])
 
     def get_level_history(self, index=None):
         return self.level_history if index is None else self.level_history[index]
 
     # @levelHistory.setter
-    def set_level_history_at_index(self, index, value):
-        self.level_history[index] = value
+    def set_latest_level(self, value):
+        self.level_history.append(value)
 
-    def get_pumping_schedule(self, index=None):
-        return self.pumping_schedule if index is None else self.pumping_schedule[index]
+    def get_pump_status_history(self, index=None):
+        return self.pump_status_history if index is None else self.pump_status_history[index]
 
     # @levelHistory.setter
-    def set_pumping_schedule_at_index(self, index, value):
-        self.pumping_schedule[index] = value
+    def set_latest_pump_status(self, value):
+        self.pump_status_history.append(value)
 
-    def get_scada_pump_schedule_level(self, pump_index, tariff_index):
-        return self.pump_schedule[pump_index, tariff_index]
+    def get_scada_pump_schedule_table_level(self, pump_index, tariff_index):
+        return self.pump_schedule_table[pump_index, tariff_index]
 
     def get_last_outflow(self):
         return 0 if self.fed_to_level is None else self.last_outflow
@@ -66,8 +67,8 @@ class PumpingLevel:
 
             return self.fissure_water_inflow[int(row), int(col)]
 
-    def set_UL_100(self, _bool):
-        self.UL_100 = _bool
+    def set_UL_100(self, bool_):
+        self.UL_100 = bool_
 
 
 class PumpSystem:
@@ -96,7 +97,7 @@ class PumpSystem:
             raise ValueError('Invalid simulation mode specified')
 
         for t in range(seconds):
-            cd = math.floor(t / 8640)  # cd = current day
+            cd = math.floor(t / 86400)  # cd = current day
             ch = (t - cd * 86400) / (60 * 60)  # ch = current hour
             cm = (t - cd * 86400 - math.floor(ch) * 60 * 60) / 60  # cm = current minute
 
@@ -120,19 +121,19 @@ class PumpSystem:
                     level.set_UL_100(False)
 
                 if not level.UL_100:
-                    pumps_required = level.get_pumping_schedule(t - 1)
+                    pumps_required = 0 if t == 0 else level.get_pump_status_history(t - 1)
 
                     do_next_check = False
 
-                    for p in range(1, level.maxPumps + 1):
+                    for p in range(1, level.max_pumps + 1):
                         dam_level = level.get_level_history(t - 1)
-                        pump_level = level.get_scada_pump_schedule_level(p - 1, tou_time_slot - 1)
+                        pump_level = level.get_scada_pump_schedule_table_level(p - 1, tou_time_slot - 1)
 
                         if dam_level >= pump_level:
                             pumps_required_temp = p
                             do_next_check = True
 
-                        if dam_level < (level.get_scada_pump_schedule_level(0, tou_time_slot - 1) - level.hysteresis):
+                        if dam_level < (level.get_scada_pump_schedule_table_level(0, tou_time_slot - 1) - level.hysteresis):
                             pumps_required = 0
                             do_next_check = False
 
@@ -157,8 +158,8 @@ class PumpSystem:
 
                 level_new = level.get_level_history(t - 1) + 100 / level.capacity * (
                             level.get_fissure_water_inflow(ch, cm, pumps) + additional_in_flow - outflow)
-                level.set_level_history(t, level_new)
-                level.set_pumping_schedule(t, pumps)
+                level.set_latest_level(level_new)
+                level.set_latest_pump_status(pumps)
 
                 # elif t >= secondsInOneDay * (simulatedDays - 1):
                 #    pumpSystemTotalPower[t - secondsInOneDay * (simulatedDays - 1)] += pumps * level.pumpPower
