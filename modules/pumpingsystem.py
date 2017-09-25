@@ -88,3 +88,78 @@ class PumpSystem:
 
     def __iter__(self):
         return iter(self.levels)
+
+    def perform_simulation(self, mode, seconds=86400):
+        # 86400 = seconds in one day
+
+        if mode not in ['1-factor', '2-factor', 'verification']:
+            raise ValueError('Invalid simulation mode specified')
+
+        for t in range(seconds):
+            cd = math.floor(t / 8640)  # cd = current day
+            ch = (t - cd * 86400) / (60 * 60)  # ch = current hour
+            cm = (t - cd * 86400 - math.floor(ch) * 60 * 60) / 60  # cm = current minute
+
+            if (7 <= ch < 10) or (18 <= ch < 20):  # Eskom peak
+                tou_time_slot = 1
+            elif (0 <= ch < 6) or (22 <= ch < 24):  # Eskom off-peak
+                tou_time_slot = 3
+            else:  # Eskom standard
+                tou_time_slot = 2
+
+            for level in self.levels:
+                upstream_dam_name = level.get_upstream_level_name()
+                if mode == '1-factor' or upstream_dam_name is None:
+                    upper_dam_level = 45
+                else:
+                    upper_dam_level = self.get_level_from_name(upstream_dam_name).get_level_history(t - 1)
+
+                if upper_dam_level >= level.UL_HL:
+                    level.set_UL_100(True)
+                if upper_dam_level <= level.UL_LL:
+                    level.set_UL_100(False)
+
+                if not level.UL_100:
+                    pumps_required = level.get_pumping_schedule(t - 1)
+
+                    do_next_check = False
+
+                    for p in range(1, level.maxPumps + 1):
+                        dam_level = level.get_level_history(t - 1)
+                        pump_level = level.get_scada_pump_schedule_level(p - 1, tou_time_slot - 1)
+
+                        if dam_level >= pump_level:
+                            pumps_required_temp = p
+                            do_next_check = True
+
+                        if dam_level < (level.get_scada_pump_schedule_level(0, tou_time_slot - 1) - level.hysteresis):
+                            pumps_required = 0
+                            do_next_check = False
+
+                    if pumps_required >= (pumps_required_temp + 2):
+                        pumps_required = pumps_required_temp + 1
+                    if do_next_check:
+                        if pumps_required_temp > pumps_required:
+                            pumps_required = pumps_required_temp
+                else:
+                    pumps_required = 0
+
+                # calculate and update simulation values
+                pumps = pumps_required
+                outflow = pumps * level.pump_flow
+
+                level.set_last_outflow(outflow)
+
+                additional_in_flow = 0
+                for level2 in self.levels:
+                    if level2.fed_to_level == level.name:
+                        additional_in_flow += level2.get_last_outflow()
+
+                level_new = level.get_level_history(t - 1) + 100 / level.capacity * (
+                            level.get_fissure_water_inflow(ch, cm, pumps) + additional_in_flow - outflow)
+                level.set_level_history(t, level_new)
+                level.set_pumping_schedule(t, pumps)
+
+                # elif t >= secondsInOneDay * (simulatedDays - 1):
+                #    pumpSystemTotalPower[t - secondsInOneDay * (simulatedDays - 1)] += pumps * level.pumpPower
+                #    eskomTime[t - secondsInOneDay * (simulatedDays - 1)] = tariffTimeSlot
