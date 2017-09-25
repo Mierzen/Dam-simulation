@@ -78,6 +78,7 @@ class PumpSystem:
         self.name = name
         self.levels = []
         self.eskom_tou = [3]
+        self.total_power = []
 
     def add_level(self, pumping_level):
         self.levels.append(pumping_level)
@@ -166,6 +167,13 @@ class PumpSystem:
                 level.set_latest_level(level_new)
                 level.set_latest_pump_status(pumps)
 
+        # calculate pump system total power
+        # can do it in the loop above, though
+        power_list = []
+        for level in self.levels:
+            power_list.append(pd.DataFrame(level.get_pump_status_history()) * level.pump_power)
+        self.total_power = pd.concat(power_list, axis=1).sum(axis=1).values
+
         if save:
             self._save_simulation_results(mode, seconds)
 
@@ -181,7 +189,8 @@ class PumpSystem:
                     level.name + " Status": data_schedule}
             df = pd.concat([df, pd.DataFrame(data=data, index=index)], axis=1)
 
-        data = {'Eskom ToU': self.eskom_tou}
+        data = {'Pump system total power': self.total_power,
+                'Eskom ToU': self.eskom_tou}
         df = pd.concat([df, pd.DataFrame(data=data, index=index)], axis=1)
         df.index.name = 'seconds'
         df.to_csv('{}_simulation_data_export_{}.csv'.format(self.name, mode))
