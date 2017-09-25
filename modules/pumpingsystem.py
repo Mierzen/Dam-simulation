@@ -1,5 +1,7 @@
 import math
 import pandas as pd
+import logging, sys
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
 
 class PumpingLevel:
@@ -21,6 +23,7 @@ class PumpingLevel:
         self.UL_100 = False
         self.max_pumps = len([1 for r in pump_schedule_table if [150, 150, 150] not in r])
         self.pump_statuses_for_verification = pump_statuses_for_verification # this is only used in verification mode
+        logging.info('{} pumping level created.'.format(self.name))
 
     def get_level_history(self, index=None):
         return self.level_history if index is None else self.level_history[index]
@@ -78,9 +81,11 @@ class PumpSystem:
         self.levels = []
         self.eskom_tou = [3]
         self.total_power = []
+        logging.info('{} pump system created.'.format(self.name))
 
     def add_level(self, pumping_level):
         self.levels.append(pumping_level)
+        logging.info('{} pumping level added to {} pump system.'.format(pumping_level.name, self.name))
 
     def get_level_from_index(self, level_number):
         return self.levels[level_number]
@@ -181,6 +186,8 @@ class PumpSystem:
             power_list.append(pd.DataFrame(level.get_pump_status_history()) * level.pump_power)
         self.total_power = pd.concat(power_list, axis=1).sum(axis=1).values
 
+        logging.info('{} simulation completed in {} mode.'.format(self.name, mode))
+
         if save:
             self._save_simulation_results(mode, seconds)
 
@@ -200,6 +207,7 @@ class PumpSystem:
         df = pd.concat([df, pd.DataFrame(data=data, index=index)], axis=1)
         df.index.name = 'seconds'
         df.to_csv('{}_simulation_data_export_{}.csv'.format(self.name, mode))
+        logging.info('{} simulation data saved.'.format(mode))
 
     def reset_pumpsystem_state(self):
         self.eskom_tou = [3]
@@ -209,3 +217,5 @@ class PumpSystem:
             level.level_history = [level.level_history[0]]
             level.pump_status_history = [level.pump_status_history[0]]
             level.last_outflow = 0
+
+        logging.info('{} pumping level successfully cleared.'.format(self.name))
