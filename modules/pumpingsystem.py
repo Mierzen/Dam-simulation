@@ -98,6 +98,10 @@ class PumpSystem:
         if mode not in ['1-factor', '2-factor', 'verification']:
             raise ValueError('Invalid simulation mode specified')
 
+        # reset simulation if it has run before
+        if len(self.total_power) > 1:
+            self.reset_pumpsystem_state()
+
         for t in range(1, seconds):  # start at 1, because initial conditions are specified
             cd = math.floor(t / 86400)  # cd = current day
             ch = (t - cd * 86400) / (60 * 60)  # ch = current hour
@@ -192,3 +196,11 @@ class PumpSystem:
         df.index.name = 'seconds'
         df.to_csv('{}_simulation_data_export_{}.csv'.format(self.name, mode))
 
+    def reset_pumpsystem_state(self):
+        self.eskom_tou = [3]
+        self.total_power = []
+
+        for level in self.levels:
+            level.level_history = [level.level_history[0]]
+            level.pump_status_history = [level.pump_status_history[0]]
+            level.last_outflow = 0
