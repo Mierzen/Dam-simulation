@@ -133,7 +133,8 @@ class PumpSystem:
                             pumps_required_temp = p
                             do_next_check = True
 
-                        if dam_level < (level.get_scada_pump_schedule_table_level(0, tou_time_slot - 1) - level.hysteresis):
+                        if dam_level < (
+                            level.get_scada_pump_schedule_table_level(0, tou_time_slot - 1) - level.hysteresis):
                             pumps_required = 0
                             do_next_check = False
 
@@ -157,10 +158,6 @@ class PumpSystem:
                         additional_in_flow += level2.get_last_outflow()
 
                 level_new = level.get_level_history(t - 1) + 100 / level.capacity * (
-                            level.get_fissure_water_inflow(ch, cm, pumps) + additional_in_flow - outflow)
+                    level.get_fissure_water_inflow(ch, cm, pumps) + additional_in_flow - outflow)
                 level.set_latest_level(level_new)
                 level.set_latest_pump_status(pumps)
-
-                # elif t >= secondsInOneDay * (simulatedDays - 1):
-                #    pumpSystemTotalPower[t - secondsInOneDay * (simulatedDays - 1)] += pumps * level.pumpPower
-                #    eskomTime[t - secondsInOneDay * (simulatedDays - 1)] = tariffTimeSlot
