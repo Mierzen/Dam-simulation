@@ -1,8 +1,9 @@
 import math
+import pandas as pd
 
 
 class PumpingLevel:
-    def __init__(self, name, capacity, initial_level, pump_flow, pump_power, pump_schedule_table, fissure_water_inflow,
+    def __init__(self, name, capacity, initial_level, pump_flow, pump_power, pump_schedule_table, initial_pumps_status, fissure_water_inflow,
                  hysteresis=5.0, UL_LL=95.0, UL_HL=100.0, fed_to_level=None):
         self.name = name
         self.capacity = capacity
@@ -13,6 +14,7 @@ class PumpingLevel:
         self.level_history = []
         self.level_history.append(initial_level)
         self.pump_status_history = []
+        self.pump_status_history.append(initial_pumps_status)
         self.fed_to_level = fed_to_level  # to which level does this one pump?
         self.last_outflow = 0
         self.hysteresis = hysteresis
@@ -75,6 +77,7 @@ class PumpSystem:
     def __init__(self, name):
         self.name = name
         self.levels = []
+        self.eskom_tou = [3]
 
     def add_level(self, pumping_level):
         self.levels.append(pumping_level)
@@ -90,13 +93,13 @@ class PumpSystem:
     def __iter__(self):
         return iter(self.levels)
 
-    def perform_simulation(self, mode, seconds=86400):
+    def perform_simulation(self, mode, seconds=86400, save=False):
         # 86400 = seconds in one day
 
         if mode not in ['1-factor', '2-factor', 'verification']:
             raise ValueError('Invalid simulation mode specified')
 
-        for t in range(seconds):
+        for t in range(1, seconds):  # start at 1, because initial conditions are specified
             cd = math.floor(t / 86400)  # cd = current day
             ch = (t - cd * 86400) / (60 * 60)  # ch = current hour
             cm = (t - cd * 86400 - math.floor(ch) * 60 * 60) / 60  # cm = current minute
@@ -107,6 +110,7 @@ class PumpSystem:
                 tou_time_slot = 3
             else:  # Eskom standard
                 tou_time_slot = 2
+            self.eskom_tou.append(tou_time_slot)
 
             for level in self.levels:
                 upstream_dam_name = level.get_upstream_level_name()
@@ -121,7 +125,7 @@ class PumpSystem:
                     level.set_UL_100(False)
 
                 if not level.UL_100:
-                    pumps_required = 0 if t == 0 else level.get_pump_status_history(t - 1)
+                    pumps_required = level.get_pump_status_history(t - 1)
 
                     do_next_check = False
 
@@ -161,3 +165,24 @@ class PumpSystem:
                     level.get_fissure_water_inflow(ch, cm, pumps) + additional_in_flow - outflow)
                 level.set_latest_level(level_new)
                 level.set_latest_pump_status(pumps)
+
+        if save:
+            self._save_simulation_results(mode, seconds)
+
+    def _save_simulation_results(self, mode, seconds):
+        df = pd.DataFrame()
+
+        index = range(0, seconds)
+
+        for level in self.levels:
+            data_level = level.get_level_history()
+            data_schedule = level.get_pump_status_history()
+            data = {level.name + " Level": data_level,
+                    level.name + " Status": data_schedule}
+            df = pd.concat([df, pd.DataFrame(data=data, index=index)], axis=1)
+
+        data = {'Eskom ToU': self.eskom_tou}
+        df = pd.concat([df, pd.DataFrame(data=data, index=index)], axis=1)
+        df.index.name = 'seconds'
+        df.to_csv('{}_simulation_data_export_{}.csv'.format(self.name, mode))
+
