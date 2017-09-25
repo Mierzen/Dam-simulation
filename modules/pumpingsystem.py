@@ -11,10 +11,8 @@ class PumpingLevel:
         self.pump_power = pump_power
         self.pump_schedule_table = pump_schedule_table
         self.fissure_water_inflow = fissure_water_inflow
-        self.level_history = []
-        self.level_history.append(initial_level)
-        self.pump_status_history = []
-        self.pump_status_history.append(initial_pumps_status)
+        self.level_history = [initial_level]
+        self.pump_status_history = [initial_pumps_status]
         self.fed_to_level = fed_to_level  # to which level does this one pump?
         self.last_outflow = 0
         self.hysteresis = hysteresis
