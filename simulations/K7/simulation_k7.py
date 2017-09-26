@@ -46,16 +46,16 @@ initial_level_surface = actual_values['Surface Level'][0]
 # Create pump system
 pump_system = ps.PumpSystem('K7')
 pump_system.add_level(ps.PumpingLevel("41L", 3000000, initial_level_41,
-                                      216.8, 3508.4, pump_schedule_41, 1,
+                                      216.8, 3508.4, pump_schedule_41, actual_status_41[0],
                                       inflow_41, fed_to_level="31L", pump_statuses_for_verification=actual_status_41))
 pump_system.add_level(ps.PumpingLevel("31L", 3000000, initial_level_31,
-                                      146.8, 3283.6, pump_schedule_31, 2,
+                                      146.8, 3283.6, pump_schedule_31, actual_status_31[0],
                                       inflow_31, fed_to_level="20L", pump_statuses_for_verification=actual_status_31))
 pump_system.add_level(ps.PumpingLevel("20L", 3000000, initial_level_20,
-                                      171.8, 3821.0, pump_schedule_20, 1,
+                                      171.8, 3821.0, pump_schedule_20, actual_status_20[0],
                                       inflow_20, fed_to_level="IPC", pump_statuses_for_verification=actual_status_20))
 pump_system.add_level(ps.PumpingLevel("IPC", 3000000, initial_level_IPC,
-                                      147.4, 3572.8, pump_schedule_IPC, 2,
+                                      147.4, 3572.8, pump_schedule_IPC, actual_status_IPC[0],
                                       inflow_IPC, fed_to_level="Surface",
                                       pump_statuses_for_verification=actual_status_IPC))
 pump_system.add_level(ps.PumpingLevel("Surface", 5000000, initial_level_surface,
