@@ -21,6 +21,7 @@ pump_schedule_IPC = np.array([[80, 75, 30],
                               [90, 85, 50],
                               [95, 95, 65],
                               [150, 150, 150]])
+dummy_pump_schedule_surface = np.array([[150, 150, 150]])
 
 # Inflows into dams
 dam_inflow_profiles = pd.read_csv('K7_dam_inflow_profiles.csv.gz')
@@ -28,6 +29,7 @@ inflow_41 = np.reshape(dam_inflow_profiles['41L Inflow'].values, (24, 2))
 inflow_31 = np.reshape(dam_inflow_profiles['31L Inflow'].values, (24, 2))
 inflow_20 = np.reshape(dam_inflow_profiles['20L Inflow'].values, (24, 2))
 inflow_IPC = np.reshape(dam_inflow_profiles['IPC Inflow'].values, (24, 2))
+inflow_surface = np.reshape(dam_inflow_profiles['Surface Inflow'].values, (24, 2))
 
 # Read actual data for initial conditions and verification
 actual_values = pd.read_csv('K7_data_for_verification.csv.gz')
@@ -39,6 +41,7 @@ initial_level_41 = actual_values['41L Level'][0]
 initial_level_31 = actual_values['31L Level'][0]
 initial_level_20 = actual_values['20L Level'][0]
 initial_level_IPC = actual_values['IPC Level'][0]
+initial_level_surface = actual_values['Surface Level'][0]
 
 # Create pump system
 pump_system = ps.PumpSystem('K7')
@@ -46,14 +49,18 @@ pump_system.add_level(ps.PumpingLevel("41L", 3000000, initial_level_41,
                                       216.8, 3508.4, pump_schedule_41, 1,
                                       inflow_41, fed_to_level="31L", pump_statuses_for_verification=actual_status_41))
 pump_system.add_level(ps.PumpingLevel("31L", 3000000, initial_level_31,
-                                      146.8, 3283.6, pump_schedule_31, 3,
+                                      146.8, 3283.6, pump_schedule_31, 2,
                                       inflow_31, fed_to_level="20L", pump_statuses_for_verification=actual_status_31))
 pump_system.add_level(ps.PumpingLevel("20L", 3000000, initial_level_20,
-                                      171.8, 3821.0, pump_schedule_20, 3,
+                                      171.8, 3821.0, pump_schedule_20, 1,
                                       inflow_20, fed_to_level="IPC", pump_statuses_for_verification=actual_status_20))
 pump_system.add_level(ps.PumpingLevel("IPC", 3000000, initial_level_IPC,
-                                      147.4, 3572.8, pump_schedule_IPC, 3,
-                                      inflow_IPC, pump_statuses_for_verification=actual_status_IPC))
+                                      147.4, 3572.8, pump_schedule_IPC, 2,
+                                      inflow_IPC, fed_to_level="Surface",
+                                      pump_statuses_for_verification=actual_status_IPC))
+pump_system.add_level(ps.PumpingLevel("Surface", 5000000, initial_level_surface,
+                                      0, 0, dummy_pump_schedule_surface, 0, inflow_surface,
+                                      pump_statuses_for_verification=actual_status_IPC)) # the status data doesn't matter
 
 
 # Perform simulations
