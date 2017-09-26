@@ -100,6 +100,7 @@ class PumpSystem:
 
     def perform_simulation(self, mode, seconds=86400, save=False):
         # 86400 = seconds in one day
+        logging.info('{} simulation started in {} mode.'.format(self.name, mode))
 
         if mode not in ['1-factor', '2-factor', 'verification']:
             raise ValueError('Invalid simulation mode specified')
@@ -218,4 +219,4 @@ class PumpSystem:
             level.pump_status_history = [level.pump_status_history[0]]
             level.last_outflow = 0
 
-        logging.info('{} pumping level successfully cleared.'.format(self.name))
+        logging.info('{} pumping system successfully cleared.'.format(self.name))
