@@ -75,6 +75,19 @@ class PumpingLevel:
         self.UL_100 = bool_
 
 
+def get_eskom_tou(seconds):
+    cd = math.floor(seconds / 86400)  # cd = current day
+    ch = (seconds - cd * 86400) / (60 * 60)  # ch = current hour
+
+    if (7 <= ch < 10) or (18 <= ch < 20):  # Eskom peak
+        tou_time_slot = 1
+    elif (0 <= ch < 6) or (22 <= ch < 24):  # Eskom off-peak
+        tou_time_slot = 3
+    else:  # Eskom standard
+        tou_time_slot = 2
+
+    return tou_time_slot
+
 class PumpSystem:
     def __init__(self, name):
         self.name = name
@@ -110,19 +123,11 @@ class PumpSystem:
             self.reset_pumpsystem_state()
 
         for t in range(1, seconds):  # start at 1, because initial conditions are specified
-            cd = math.floor(t / 86400)  # cd = current day
-            ch = (t - cd * 86400) / (60 * 60)  # ch = current hour
-            cm = (t - cd * 86400 - math.floor(ch) * 60 * 60) / 60  # cm = current minute
-
-            if (7 <= ch < 10) or (18 <= ch < 20):  # Eskom peak
-                tou_time_slot = 1
-            elif (0 <= ch < 6) or (22 <= ch < 24):  # Eskom off-peak
-                tou_time_slot = 3
-            else:  # Eskom standard
-                tou_time_slot = 2
+            tou_time_slot = get_eskom_tou(t)
             self.eskom_tou.append(tou_time_slot)
 
             for level in self.levels:
+                # scheduling algorithm
                 if mode is not 'verification':
                     upstream_dam_name = level.get_upstream_level_name()
                     if mode == '1-factor' or upstream_dam_name is None:
