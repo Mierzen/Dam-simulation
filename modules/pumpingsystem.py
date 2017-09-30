@@ -75,10 +75,8 @@ class PumpingLevel:
         self.UL_100 = bool_
 
 
-def get_eskom_tou(seconds):
-    cd = math.floor(seconds / 86400)  # cd = current day
-    ch = (seconds - cd * 86400) / (60 * 60)  # ch = current hour
-
+def get_eskom_tou(current_hour):
+    ch = current_hour
     if (7 <= ch < 10) or (18 <= ch < 20):  # Eskom peak
         tou_time_slot = 1
     elif (0 <= ch < 6) or (22 <= ch < 24):  # Eskom off-peak
@@ -87,6 +85,15 @@ def get_eskom_tou(seconds):
         tou_time_slot = 2
 
     return tou_time_slot
+
+
+def get_current_day_hour_minute(seconds):
+    cd = math.floor(seconds / 86400)  # cd = current day
+    ch = (seconds - cd * 86400) / (60 * 60)  # ch = current hour
+    cm = (seconds - cd * 86400 - math.floor(ch) * 60 * 60) / 60  # cm = current minute
+
+    return cd, ch, cm
+
 
 class PumpSystem:
     def __init__(self, name):
@@ -123,7 +130,9 @@ class PumpSystem:
             self.reset_pumpsystem_state()
 
         for t in range(1, seconds):  # start at 1, because initial conditions are specified
-            tou_time_slot = get_eskom_tou(t)
+            _, ch, cm = get_current_day_hour_minute(t)
+
+            tou_time_slot = get_eskom_tou(ch)
             self.eskom_tou.append(tou_time_slot)
 
             for level in self.levels:
