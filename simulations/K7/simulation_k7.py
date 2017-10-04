@@ -24,7 +24,7 @@ pump_schedule_IPC = np.array([[80, 75, 30],
 dummy_pump_schedule_surface = np.array([[150, 150, 150]])
 
 # Inflows into dams
-dam_inflow_profiles = pd.read_csv('K7_dam_inflow_profiles.csv.gz')
+dam_inflow_profiles = pd.read_csv('input/K7_dam_inflow_profiles.csv.gz')
 inflow_41 = np.reshape(dam_inflow_profiles['41L Inflow'].values, (24, 2))
 inflow_31 = np.reshape(dam_inflow_profiles['31L Inflow'].values, (24, 2))
 inflow_20 = np.reshape(dam_inflow_profiles['20L Inflow'].values, (24, 2))
@@ -32,7 +32,7 @@ inflow_IPC = np.reshape(dam_inflow_profiles['IPC Inflow'].values, (24, 2))
 inflow_surface = np.reshape(dam_inflow_profiles['Surface Inflow'].values, (24, 2))
 
 # Read actual data for initial conditions and verification
-actual_values = pd.read_csv('K7_data_for_verification.csv.gz')
+actual_values = pd.read_csv('input/K7_data_for_verification.csv.gz')
 actual_status_41 = actual_values['41L Status'].values
 actual_status_31 = actual_values['31L Status'].values
 actual_status_20 = actual_values['20L Status'].values

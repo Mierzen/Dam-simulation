@@ -9,11 +9,11 @@ pump_schedule_44 = np.array([[80, 40, 30],
                             [150, 150, 150]])
 
 # Inflows into dams
-dam_inflow_profiles = pd.read_csv('K3_dam_inflow_profiles.csv.gz')
+dam_inflow_profiles = pd.read_csv('input/K3_dam_inflow_profiles.csv.gz')
 inflow_44 = np.reshape(dam_inflow_profiles['44L Inflow'].values, (24, 2))
 
 # Read actual data for initial conditions and verification
-actual_values = pd.read_csv('K3_data_for_verification.csv.gz')
+actual_values = pd.read_csv('input/K3_data_for_verification.csv.gz')
 actual_status_44 = actual_values['44L Status'].values
 initial_level_44 = actual_values['44L Level'][0]
 

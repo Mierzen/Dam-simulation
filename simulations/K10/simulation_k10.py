@@ -15,12 +15,12 @@ pump_schedule_12 = np.array([[80, 30, 30],
                             [150, 150, 150]])
 
 # Inflows into dams
-dam_inflow_profiles = pd.read_csv('K10_dam_inflow_profiles.csv.gz')
+dam_inflow_profiles = pd.read_csv('input/K10_dam_inflow_profiles.csv.gz')
 inflow_27 = np.reshape(dam_inflow_profiles['27L Inflow'].values, (24, 2))
 inflow_12 = np.reshape(dam_inflow_profiles['12L Inflow'].values, (24, 2))
 
 # Read actual data for initial conditions and verification
-actual_values = pd.read_csv('K10_data_for_verification.csv.gz')
+actual_values = pd.read_csv('input/K10_data_for_verification.csv.gz')
 actual_status_27 = actual_values['27L Status'].values
 actual_status_12 = actual_values['12L Status'].values
 initial_level_27 = actual_values['27L Level'][0]
