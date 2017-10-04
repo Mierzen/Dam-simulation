@@ -1,6 +1,10 @@
+import logging
 import math
+import os
+import sys
+
 import pandas as pd
-import logging, sys
+
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
 
@@ -273,7 +277,9 @@ class PumpSystem:
                 'Eskom ToU': self.eskom_tou}
         df = pd.concat([df, pd.DataFrame(data=data, index=index)], axis=1)
         df.index.name = 'seconds'
-        df.to_csv('{}_simulation_data_export_{}.csv.gz'.format(self.name, mode), compression='gzip')
+
+        os.makedirs(r'output/', exist_ok=True)
+        df.to_csv('output/{}_simulation_data_export_{}.csv.gz'.format(self.name, mode), compression='gzip')
         logging.info('{} simulation data saved.'.format(mode))
 
     def reset_pumpsystem_state(self):
