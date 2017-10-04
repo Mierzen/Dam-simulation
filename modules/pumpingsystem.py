@@ -5,8 +5,11 @@ logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
 
 class PumpingLevel:
-    def __init__(self, name, capacity, initial_level, pump_flow, pump_power, pump_schedule_table, initial_pumps_status, fissure_water_inflow,
-                 hysteresis=5.0, UL_LL=95.0, UL_HL=100.0, fed_to_level=None, pump_statuses_for_verification=None):
+    def __init__(self, name, capacity, initial_level, pump_flow, pump_power, pump_schedule_table, initial_pumps_status,
+                 fissure_water_inflow, hysteresis=5.0, UL_LL=95.0, UL_HL=100.0,
+                 fed_to_level=None, pump_statuses_for_verification=None,
+                 n_mode_min_pumps=0, n_mode_max_pumps=3, n_mode_min_level=33, n_mode_max_level=77,
+                 n_mode_control_range=5, n_mode_bottom_offset=3, n_mode_top_offset=3):
         self.name = name
         self.capacity = capacity
         self.pump_flow = pump_flow
@@ -23,7 +26,27 @@ class PumpingLevel:
         self.UL_100 = False
         self.max_pumps = len([1 for r in pump_schedule_table if [150, 150, 150] not in r])
         self.pump_statuses_for_verification = pump_statuses_for_verification # this is only used in verification mode
+        self.n_mode_min_level = n_mode_min_level
+        self.n_mode_max_level = n_mode_max_level
+        self.n_mode_min_pumps = n_mode_min_pumps
+        self.n_mode_max_pumps = n_mode_max_pumps
+        self.n_mode_control_range = n_mode_control_range
+        self.n_mode_bottom_offset = n_mode_bottom_offset
+        self.n_mode_top_offset = n_mode_top_offset
+        # calculate starting and stopping levels for n-factor mode
+        # 1 = peak, 2 = standard, 3 = off-peak
+        self.n_mode_lower_bound = {3: n_mode_min_level,
+                                   2: n_mode_min_level,
+                                   1: n_mode_max_level - n_mode_control_range}
+        self.n_mode_upper_bound = {3: n_mode_min_level + n_mode_control_range,
+                                   2: n_mode_min_level + n_mode_control_range,
+                                   1: n_mode_max_level}
+        self.n_mode_last_change = '000' # used for n-factor
         logging.info('{} pumping level created.'.format(self.name))
+        if self.max_pumps != self.n_mode_max_pumps:
+            logging.warning('{} pumping level SCADA and third party max pumps differ ({} vs {})!.'.format(
+                self.name, self.max_pumps, self.n_mode_max_pumps))
+
 
     def get_level_history(self, index=None):
         return self.level_history if index is None else self.level_history[index]
@@ -122,7 +145,7 @@ class PumpSystem:
         # 86400 = seconds in one day
         logging.info('{} simulation started in {} mode.'.format(self.name, mode))
 
-        if mode not in ['1-factor', '2-factor', 'verification']:
+        if mode not in ['1-factor', '2-factor', 'n-factor', 'verification']:
             raise ValueError('Invalid simulation mode specified')
 
         # reset simulation if it has run before
@@ -137,7 +160,7 @@ class PumpSystem:
 
             for level in self.levels:
                 # scheduling algorithm
-                if mode is not 'verification':
+                if mode == '1-factor' or mode == '2-factor':
                     upstream_dam_name = level.get_upstream_level_name()
                     if mode == '1-factor' or upstream_dam_name is None:
                         upper_dam_level = 45
@@ -174,6 +197,35 @@ class PumpSystem:
                                 pumps_required = pumps_required_temp
                     else:
                         pumps_required = 0
+
+                elif mode == 'n-factor':
+                    prev_level = level.get_level_history(t - 1)
+                    prev_pumps = level.get_pump_status_history(t - 1)
+                    pump_change = 0
+
+                    for p in range(0, level.n_mode_max_pumps):
+                        # check if pumps should be switched on
+                        check_lev = (level.n_mode_upper_bound[tou_time_slot] + p * level.n_mode_top_offset)
+                        if prev_level >= check_lev:
+                            this_change = check_lev
+                            if this_change != level.n_mode_last_change:
+                                pump_change = 1
+                                level.n_mode_last_change = this_change
+                                break
+                        # check if pumps should be switched off
+                        check_lev2 = (level.n_mode_lower_bound[tou_time_slot] - p * level.n_mode_bottom_offset)
+                        if prev_level <= check_lev2:
+                            this_change = check_lev2
+                            if (level.n_mode_last_change == '000') or (this_change < level.n_mode_last_change) or (tou_time_slot != self.eskom_tou[-2]):
+                                pump_change = -1
+                                level.n_mode_last_change = this_change
+                                break
+
+                    pumps_required = prev_pumps + pump_change
+                    if pumps_required < level.n_mode_min_pumps:
+                        pumps_required = level.n_mode_min_pumps
+                    elif pumps_required > level.n_mode_max_pumps:
+                        pumps_required = level.n_mode_max_pumps
 
                 else:  # verification mode, so use actual statuses
                     pumps_required = level.pump_statuses_for_verification[t]

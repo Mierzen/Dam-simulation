@@ -46,24 +46,34 @@ initial_level_surface = actual_values['Surface Level'][0]
 # Create pump system
 pump_system = ps.PumpSystem('K7')
 pump_system.add_level(ps.PumpingLevel("41L", 3000000, initial_level_41,
-                                      216.8, 3508.4, pump_schedule_41, actual_status_41[0],
-                                      inflow_41, fed_to_level="31L", pump_statuses_for_verification=actual_status_41))
+                                      231.4, 3508.4, pump_schedule_41, actual_status_41[0],
+                                      inflow_41, fed_to_level="31L", pump_statuses_for_verification=actual_status_41,
+                                      n_mode_max_level=90, n_mode_control_range=15,
+                                      n_mode_top_offset=15))
 pump_system.add_level(ps.PumpingLevel("31L", 3000000, initial_level_31,
-                                      146.8, 3283.6, pump_schedule_31, actual_status_31[0],
-                                      inflow_31, fed_to_level="20L", pump_statuses_for_verification=actual_status_31))
+                                      167.1, 3283.6, pump_schedule_31, actual_status_31[0],
+                                      inflow_31, fed_to_level="20L", pump_statuses_for_verification=actual_status_31,
+                                      n_mode_max_pumps=2, n_mode_max_level=90, n_mode_control_range=20,
+                                      n_mode_top_offset=5, n_mode_bottom_offset=5))
 pump_system.add_level(ps.PumpingLevel("20L", 3000000, initial_level_20,
-                                      171.8, 3821.0, pump_schedule_20, actual_status_20[0],
-                                      inflow_20, fed_to_level="IPC", pump_statuses_for_verification=actual_status_20))
+                                      263.7, 3821.0, pump_schedule_20, actual_status_20[0],
+                                      inflow_20, fed_to_level="IPC", pump_statuses_for_verification=actual_status_20,
+                                      n_mode_max_pumps=2, n_mode_control_range=5, n_mode_top_offset=5,
+                                      n_mode_bottom_offset=10))
 pump_system.add_level(ps.PumpingLevel("IPC", 3000000, initial_level_IPC,
-                                      147.4, 3572.8, pump_schedule_IPC, actual_status_IPC[0],
+                                      358.5, 3572.8, pump_schedule_IPC, actual_status_IPC[0],
                                       inflow_IPC, fed_to_level="Surface",
-                                      pump_statuses_for_verification=actual_status_IPC))
+                                      pump_statuses_for_verification=actual_status_IPC,
+                                      n_mode_max_level=90, n_mode_control_range=15, n_mode_top_offset=5,
+                                      n_mode_bottom_offset=3))
 pump_system.add_level(ps.PumpingLevel("Surface", 5000000, initial_level_surface,
                                       0, 0, dummy_pump_schedule_surface, 0, inflow_surface,
-                                      pump_statuses_for_verification=actual_status_IPC)) # the status data doesn't matter
+                                      pump_statuses_for_verification=actual_status_IPC,
+                                      n_mode_max_pumps=0))  # the status data doesn't matter
 
 
 # Perform simulations
 pump_system.perform_simulation(mode='verification', save=True)
 pump_system.perform_simulation(mode='1-factor', save=True)
 pump_system.perform_simulation(mode='2-factor', save=True)
+pump_system.perform_simulation(mode='n-factor', save=True)

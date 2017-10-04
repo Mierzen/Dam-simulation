@@ -30,13 +30,16 @@ initial_level_12 = actual_values['12L Level'][0]
 pump_system = ps.PumpSystem('K10')
 pump_system.add_level(ps.PumpingLevel("27L", 3000000, initial_level_27,
                                       236.1, 2925.6, pump_schedule_27, actual_status_27[0],
-                                      inflow_27, fed_to_level="12L", pump_statuses_for_verification=actual_status_27))
+                                      inflow_27, fed_to_level="12L", pump_statuses_for_verification=actual_status_27,
+                                      n_mode_max_pumps=2, n_mode_control_range=20))
 pump_system.add_level(ps.PumpingLevel("12L", 3000000, initial_level_12,
                                       194.6, 2656.6, pump_schedule_12, actual_status_12[0],
-                                      inflow_12, pump_statuses_for_verification=actual_status_12))
+                                      inflow_12, pump_statuses_for_verification=actual_status_12, n_mode_max_pumps=3,
+                                      n_mode_control_range=20, n_mode_min_level=36, n_mode_max_level=80))
 
 
 # Perform simulations
 pump_system.perform_simulation(mode='verification', save=True)
 pump_system.perform_simulation(mode='1-factor', save=True)
 pump_system.perform_simulation(mode='2-factor', save=True)
+pump_system.perform_simulation(mode='n-factor', save=True)
