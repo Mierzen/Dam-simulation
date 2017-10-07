@@ -3,8 +3,8 @@ import pandas as pd
 import numpy as np
 
 # Pump schedule as per SCADA. rows = pumps, columns 1:=Peak, 2:=Standard, 3:Off-peak
-pump_schedule_44 = np.array([[80, 40, 30],
-                            [85, 50, 40],
+pump_schedule_44 = np.array([[80, 50, 30],
+                            [85, 60, 40],
                             [150, 150, 150],
                             [150, 150, 150]])
 
@@ -22,7 +22,7 @@ pump_system = ps.PumpSystem('K3')
 pump_system.add_level(ps.PumpingLevel("44L", 5000000, initial_level_44,
                                       143, 1900, pump_schedule_44, actual_status_44[0],
                                       inflow_44, pump_statuses_for_verification=actual_status_44,
-                                      n_mode_max_pumps=2))
+                                      n_mode_max_pumps=2, n_mode_min_level=30, n_mode_max_level=80))
 
 
 # Perform simulations
