@@ -110,3 +110,5 @@ ENV/
 # custom
 .csv
 .png
+*.png
+*.csv
