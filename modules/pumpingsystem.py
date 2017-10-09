@@ -178,6 +178,7 @@ class PumpSystem:
 
                     if not level.UL_100:
                         pumps_required = level.get_pump_status_history(t - 1)
+                        pumps_required_temp = pumps_required
 
                         do_next_check = False
 
