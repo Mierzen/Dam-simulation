@@ -251,6 +251,8 @@ class PumpSystem:
                                 level.n_mode_max_pumps = 2
                             if t > 77400:
                                 level.n_mode_max_pumps = 3
+                            if t > 81000:
+                                level.n_mode_max_pumps = 2
 
                     max_pumps = level.n_mode_max_pumps
 
