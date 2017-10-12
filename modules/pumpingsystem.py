@@ -233,13 +233,24 @@ class PumpSystem:
                             if level.get_level_history(t - 1) > 90:
                                 level.n_mode_max_pumps = 1
                         else:
-                            if self.get_level_from_name('Surface').get_level_history(t - 1) < 90:
+                            if self.get_level_from_name('Surface').get_level_history(t - 1) < 90 and t < 39600:
                                 level.n_mode_max_pumps = 3
-                            if self.get_level_from_name('Surface').get_level_history(t - 1) >= 95:
+                            if level.get_level_history(t - 1) > 80 and t > 39600 and t < 64800:
+                                level.n_mode_max_pumps = 3
+                            if self.get_level_from_name('Surface').get_level_history(t - 1) < 90 and t > 57600:
+                                level.n_mode_max_pumps = 3
+                            if self.get_level_from_name('Surface').get_level_history(t - 1) >= 95 and t < 39600:
                                 level.n_mode_max_pumps = 2
                             if self.get_level_from_name('Surface').get_level_history(
                                             t - 1) >= 97.5 and level.get_level_history(t - 1) < 60:
                                 level.n_mode_max_pumps = 1
+                            if level.get_level_history(t - 1) < 50 and self.get_level_from_name(
+                                    'Surface').get_level_history(t - 1) >= 90 and t > 39600:
+                                level.n_mode_max_pumps = 1
+                            if t > 70200:
+                                level.n_mode_max_pumps = 2
+                            if t > 77400:
+                                level.n_mode_max_pumps = 3
 
                     max_pumps = level.n_mode_max_pumps
 
@@ -257,7 +268,7 @@ class PumpSystem:
                         if prev_level <= check_lev2:
                             this_change = check_lev2
                             if (level.n_mode_last_change == '000') or (this_change < level.n_mode_last_change) or (
-                                tou_time_slot != self.eskom_tou[-2]):
+                                        tou_time_slot != self.eskom_tou[-2]):
                                 pump_change = -1
                                 level.n_mode_last_change = this_change
                                 break
