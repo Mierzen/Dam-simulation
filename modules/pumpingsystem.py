@@ -29,7 +29,7 @@ class PumpingLevel:
         self.UL_HL = UL_HL
         self.UL_100 = False
         self.max_pumps = len([1 for r in pump_schedule_table if [150, 150, 150] not in r])
-        self.pump_statuses_for_verification = pump_statuses_for_verification # this is only used in verification mode
+        self.pump_statuses_for_verification = pump_statuses_for_verification  # this is only used in verification mode
         self.n_mode_min_level = n_mode_min_level
         self.n_mode_max_level = n_mode_max_level
         self.n_mode_min_pumps = n_mode_min_pumps
@@ -45,12 +45,11 @@ class PumpingLevel:
         self.n_mode_upper_bound = {3: n_mode_min_level + n_mode_control_range,
                                    2: n_mode_min_level + n_mode_control_range,
                                    1: n_mode_max_level}
-        self.n_mode_last_change = '000' # used for n-factor
+        self.n_mode_last_change = '000'  # used for n-factor
         logging.info('{} pumping level created.'.format(self.name))
         if self.max_pumps != self.n_mode_max_pumps:
             logging.warning('{} pumping level SCADA and third party max pumps differ ({} vs {})!.'.format(
                 self.name, self.max_pumps, self.n_mode_max_pumps))
-
 
     def get_level_history(self, index=None):
         return self.level_history if index is None else self.level_history[index]
@@ -191,7 +190,8 @@ class PumpSystem:
                                 do_next_check = True
 
                             if dam_level < (
-                                level.get_scada_pump_schedule_table_level(0, tou_time_slot - 1) - level.hysteresis):
+                                        level.get_scada_pump_schedule_table_level(0,
+                                                                                  tou_time_slot - 1) - level.hysteresis):
                                 pumps_required = 0
                                 do_next_check = False
 
@@ -209,21 +209,20 @@ class PumpSystem:
                     pump_change = 0
 
                     if level.name == '31L':
-                        if self.get_level_from_name('20L').get_level_history(t - 1) > 70: # or level.get_level_history(t - 1) < 55
+                        if self.get_level_from_name('20L').get_level_history(t - 1) > 70:
                             level.n_mode_max_pumps = 1
                         if self.get_level_from_name('20L').get_level_history(t - 1) < 60:
                             level.n_mode_max_pumps = 2
                         if level.get_level_history(t - 1) >= (level.n_mode_max_level) and t < 42900:
                             level.n_mode_max_pumps = 2
 
-
                     if level.name == '20L':
                         if tou_time_slot == 1:
-                            if level.get_level_history(t-1) < 75:
+                            if level.get_level_history(t - 1) < 75:
                                 level.n_mode_max_pumps = 1
                             if level.get_level_history(t - 1) < 60:
                                 level.n_mode_max_pumps = 0
-                            if level.get_level_history(t-1) > 80:
+                            if level.get_level_history(t - 1) > 80:
                                 level.n_mode_max_pumps = 1
                         else:
                             level.n_mode_max_pumps = 2
@@ -231,17 +230,15 @@ class PumpSystem:
                     if level.name == 'IPC':
                         if tou_time_slot == 1:
                             level.n_mode_max_pumps = self.get_level_from_name('20L').n_mode_max_pumps
-                            if level.get_level_history(t-1) > 90:
+                            if level.get_level_history(t - 1) > 90:
                                 level.n_mode_max_pumps = 1
-                            '''level.n_mode_max_pumps = 0
-                            if level.get_level_history(t-1) > 90:
-                                level.n_mode_max_pumps = 1'''
                         else:
                             if self.get_level_from_name('Surface').get_level_history(t - 1) < 90:
                                 level.n_mode_max_pumps = 3
                             if self.get_level_from_name('Surface').get_level_history(t - 1) >= 95:
                                 level.n_mode_max_pumps = 2
-                            if self.get_level_from_name('Surface').get_level_history(t - 1) >= 97.5 and level.get_level_history(t - 1) < 60:
+                            if self.get_level_from_name('Surface').get_level_history(
+                                            t - 1) >= 97.5 and level.get_level_history(t - 1) < 60:
                                 level.n_mode_max_pumps = 1
 
                     max_pumps = level.n_mode_max_pumps
@@ -259,7 +256,8 @@ class PumpSystem:
                         check_lev2 = (level.n_mode_lower_bound[tou_time_slot] - p * level.n_mode_bottom_offset)
                         if prev_level <= check_lev2:
                             this_change = check_lev2
-                            if (level.n_mode_last_change == '000') or (this_change < level.n_mode_last_change) or (tou_time_slot != self.eskom_tou[-2]):
+                            if (level.n_mode_last_change == '000') or (this_change < level.n_mode_last_change) or (
+                                tou_time_slot != self.eskom_tou[-2]):
                                 pump_change = -1
                                 level.n_mode_last_change = this_change
                                 break
