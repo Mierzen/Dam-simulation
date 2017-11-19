@@ -108,7 +108,5 @@ ENV/
 .idea/
 
 # custom
-.csv
 .png
 *.png
-*.csv
