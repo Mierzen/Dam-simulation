@@ -12,8 +12,8 @@ pump_schedule_44 = np.array([[80, 50, 30],
 dam_inflow_profiles = pd.read_csv('input/CS1_dam_inflow_profiles.csv.gz')
 inflow_44 = np.reshape(dam_inflow_profiles['44L Inflow'].values, (24, 2))
 
-# Read actual data for initial conditions and verification
-actual_values = pd.read_csv('input/CS1_data_for_verification.csv.gz')
+# Read actual data for initial conditions and validation
+actual_values = pd.read_csv('input/CS1_data_for_validation.csv.gz')
 actual_status_44 = actual_values['44L Status'].values
 initial_level_44 = actual_values['44L Level'][0]
 
@@ -21,12 +21,12 @@ initial_level_44 = actual_values['44L Level'][0]
 pump_system = ps.PumpSystem('CS1')
 pump_system.add_level(ps.PumpingLevel("44L", 5000000, initial_level_44,
                                       143, 1900, pump_schedule_44, actual_status_44[0],
-                                      inflow_44, pump_statuses_for_verification=actual_status_44,
+                                      inflow_44, pump_statuses_for_validation=actual_status_44,
                                       n_mode_max_pumps=2, n_mode_min_level=30, n_mode_max_level=80))
 
 
 # Perform simulations
-pump_system.perform_simulation(mode='verification', save=True)
+pump_system.perform_simulation(mode='validation', save=True)
 pump_system.perform_simulation(mode='1-factor', save=True)
 pump_system.perform_simulation(mode='2-factor', save=True)
 pump_system.perform_simulation(mode='n-factor', save=True)

@@ -11,7 +11,7 @@ logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 class PumpingLevel:
     def __init__(self, name, capacity, initial_level, pump_flow, pump_power, pump_schedule_table, initial_pumps_status,
                  fissure_water_inflow, hysteresis=5.0, UL_LL=95.0, UL_HL=100.0,
-                 fed_to_level=None, pump_statuses_for_verification=None,
+                 fed_to_level=None, pump_statuses_for_validation=None,
                  n_mode_min_pumps=0, n_mode_max_pumps=3, n_mode_min_level=33, n_mode_max_level=77,
                  n_mode_control_range=5, n_mode_bottom_offset=3, n_mode_top_offset=3):
         self.name = name
@@ -29,7 +29,7 @@ class PumpingLevel:
         self.UL_HL = UL_HL
         self.UL_100 = False
         self.max_pumps = len([1 for r in pump_schedule_table if [150, 150, 150] not in r])
-        self.pump_statuses_for_verification = pump_statuses_for_verification  # this is only used in verification mode
+        self.pump_statuses_for_validation = pump_statuses_for_validation  # this is only used in validation mode
         self.n_mode_min_level = n_mode_min_level
         self.n_mode_max_level = n_mode_max_level
         self.n_mode_min_pumps = n_mode_min_pumps
@@ -148,7 +148,7 @@ class PumpSystem:
         # 86400 = seconds in one day
         logging.info('{} simulation started in {} mode.'.format(self.name, mode))
 
-        if mode not in ['1-factor', '2-factor', 'n-factor', 'verification']:
+        if mode not in ['1-factor', '2-factor', 'n-factor', 'validation']:
             raise ValueError('Invalid simulation mode specified')
 
         # reset simulation if it has run before
@@ -281,8 +281,8 @@ class PumpSystem:
                     elif pumps_required > max_pumps:
                         pumps_required = max_pumps
 
-                else:  # verification mode, so use actual statuses
-                    pumps_required = level.pump_statuses_for_verification[t]
+                else:  # validation mode, so use actual statuses
+                    pumps_required = level.pump_statuses_for_validation[t]
 
                 # calculate and update simulation values
                 pumps = pumps_required
