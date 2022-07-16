@@ -46,10 +46,11 @@ class PumpingLevel:
                                    2: n_mode_min_level + n_mode_control_range,
                                    1: n_mode_max_level}
         self.n_mode_last_change = '000'  # used for n-factor
-        logging.info('{} pumping level created.'.format(self.name))
+        logging.info(f'{self.name} pumping level created.')
         if self.max_pumps != self.n_mode_max_pumps:
-            logging.warning('{} pumping level SCADA and third party max pumps differ ({} vs {})!.'.format(
-                self.name, self.max_pumps, self.n_mode_max_pumps))
+            logging.warning(
+                f'{self.name} pumping level SCADA and third party max pumps differ ({self.max_pumps} vs {self.n_mode_max_pumps})!.'
+            )
 
     def get_level_history(self, index=None):
         return self.level_history if index is None else self.level_history[index]
@@ -78,24 +79,19 @@ class PumpingLevel:
         return self.fed_to_level
 
     def get_fissure_water_inflow(self, current_hour=None, current_minute=None, pumps=None):
-        if isinstance(self.fissure_water_inflow, int) or isinstance(self.fissure_water_inflow, float):  # it is constant
+        if isinstance(self.fissure_water_inflow, (int, float)):
             return self.fissure_water_inflow
-        else:
-            if self.fissure_water_inflow.shape[1] == 2:  # if 2 columns. Not f(pump)
-                f1 = 0
-                f2 = 1
-                row = math.floor(current_hour)
-            else:  # 3 columns. Is f(pump)
-                f1 = 1
-                f2 = 2
-                row = pumps * 24 - 1 + math.floor(current_hour)
+        if self.fissure_water_inflow.shape[1] == 2:  # if 2 columns. Not f(pump)
+            f1 = 0
+            f2 = 1
+            row = math.floor(current_hour)
+        else:  # 3 columns. Is f(pump)
+            f1 = 1
+            f2 = 2
+            row = pumps * 24 - 1 + math.floor(current_hour)
 
-            if math.floor(current_minute) <= 30:
-                col = f1
-            else:
-                col = f2
-
-            return self.fissure_water_inflow[int(row), int(col)]
+        col = f1 if math.floor(current_minute) <= 30 else f2
+        return self.fissure_water_inflow[int(row), col]
 
     def set_UL_100(self, bool_):
         self.UL_100 = bool_
@@ -104,13 +100,11 @@ class PumpingLevel:
 def get_eskom_tou(current_hour):
     ch = current_hour
     if (7 <= ch < 10) or (18 <= ch < 20):  # Eskom peak
-        tou_time_slot = 1
+        return 1
     elif (0 <= ch < 6) or (22 <= ch < 24):  # Eskom off-peak
-        tou_time_slot = 3
+        return 3
     else:  # Eskom standard
-        tou_time_slot = 2
-
-    return tou_time_slot
+        return 2
 
 
 def get_current_day_hour_minute(seconds):
@@ -127,11 +121,13 @@ class PumpSystem:
         self.levels = []
         self.eskom_tou = [3]
         self.total_power = []
-        logging.info('{} pump system created.'.format(self.name))
+        logging.info(f'{self.name} pump system created.')
 
     def add_level(self, pumping_level):
         self.levels.append(pumping_level)
-        logging.info('{} pumping level added to {} pump system.'.format(pumping_level.name, self.name))
+        logging.info(
+            f'{pumping_level.name} pumping level added to {self.name} pump system.'
+        )
 
     def get_level_from_index(self, level_number):
         return self.levels[level_number]
